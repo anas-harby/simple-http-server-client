@@ -49,5 +49,24 @@ void GET_callback(const std::vector<std::string> &results, client::net::socketst
 }
 
 void POST_callback(const std::vector<std::string> &results, client::net::socketstream &ss) {
+    char c;
+    std::ostringstream oss;
+    std::istringstream iss, riss;
+    std::string response_status, http_version, status_msg;
+    int status;
 
+    while (ss.get(c))
+        oss.put(c);
+
+    iss.str(oss.str());
+    std::getline(iss, response_status);
+    riss.str(response_status);
+    riss >> http_version >> status;
+    status_msg = riss.str().substr(riss.tellg());
+
+    if (status == client::ok_status) {
+        std::cout << status << status_msg;
+    } else {
+        std::cerr << status << status_msg;
+    }
 }
