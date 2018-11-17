@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "server.h"
+#include "parser.h"
 #include <cstring>
 #include <unistd.h>
 
@@ -76,8 +77,9 @@ void server::handle_request(int connection_socket) {
     std::cout << std::this_thread::get_id() << " TEST\n";
     std::cout << connection_socket << " Conn\n";
     char buffer[1024];
-    int valread = read(connection_socket , buffer, 1024);
-    printf("%s\n", buffer);
+    int value_read = read(connection_socket , buffer, 1024);
+    std::string str(buffer);
+    http_request req = parser::parse(str);
     server::threads_mtx.lock();
     server::working_threads[std::this_thread::get_id()]->mark_done();
     server::threads_mtx.unlock();

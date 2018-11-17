@@ -17,7 +17,7 @@ public:
 
     http_request();
     request_type get_request_type();
-    std::ostream&operator <<(std::ostream &strm, const http_request &request);
+    friend std::ostream& operator <<(std::ostream &strm, const http_request &request);
 
 private:
     std::map<std::string, std::string> headers;
