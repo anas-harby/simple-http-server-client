@@ -9,8 +9,9 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "client.h"
 
-typedef void (*cfunc)(std::string);
+typedef void (*cfunc)(const std::vector<std::string> &results, client::net::socketstream &ss);
 
 extern std::map<std::string, cfunc> callbackMap;
 

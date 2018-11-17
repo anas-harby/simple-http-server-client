@@ -8,13 +8,13 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "client.h"
 
-typedef std::string (*pfunc)(std::vector<std::string>);
+typedef void (*pfunc)(const std::vector<std::string> &results, client::net::socketstream &ss);
 
 extern std::map<std::string, pfunc> requestMap;
 
 namespace request {
-
     void init();
 }
 

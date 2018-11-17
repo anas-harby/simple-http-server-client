@@ -7,9 +7,9 @@
 #include <vector>
 #include <sstream>
 
-std::string GET(std::vector<std::string>);
+void GET(const std::vector<std::string> &results, client::net::socketstream &ss);
 
-std::string POST(std::vector<std::string>);
+void POST(const std::vector<std::string> &results, client::net::socketstream &ss);
 
 std::map<std::string, pfunc> requestMap;
 
@@ -19,15 +19,15 @@ void request::init() {
 }
 
 
-std::string GET(std::vector<std::string> results) {
-    std::stringstream ss;
-    ss << "GET " << results[1] << client::http_version << "\r\n";
-    ss << "Host: " << results[2] << "\r\n";
-    ss << "Accept: text/html" << "\r\n";
-    ss << "\r\n";
-    return ss.str();
+void GET(const std::vector<std::string> &results, client::net::socketstream &ss) {
+    std::stringstream iss;
+    iss << "GET " << results[1] << client::http_version << "\r\n";
+    iss << "Host: " << results[2] << "\r\n";
+    iss << "Accept: text/html" << "\r\n";
+    iss << "\r\n";
+    ss << iss.str() << std::flush;
 }
 
-std::string POST(std::vector<std::string> results) {
+void POST(const std::vector<std::string> &results, client::net::socketstream &ss) {
 
 }

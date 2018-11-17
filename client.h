@@ -15,6 +15,7 @@
 
 namespace client {
     const std::string http_version = "HTTP/1.0";
+    const int ok_status = 200;
     const int default_port = 80;
 
     namespace net {

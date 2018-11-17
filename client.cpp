@@ -105,15 +105,9 @@ int main(int argc, const char *argv[]) {
 
         if (ss.open(server_ip, port)) {
 
-            ss << (*requestMap[results[0]])(results) << std::flush;
+            (*requestMap[results[0]])(results, ss);
 
-
-            char c;
-            std::ostringstream oss;
-            while (ss.get(c))
-                oss.put(c);
-
-            (*callbackMap[results[0]])(oss.str());
+            (*callbackMap[results[0]])(results, ss);
         }
     }
 
