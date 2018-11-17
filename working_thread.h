@@ -12,6 +12,7 @@ class working_thread {
 public:
     template<typename _Callable, typename... _Args>
     working_thread(_Callable &&__f, _Args &&... __args);
+    working_thread(std::thread *th);
 
     void detach();
     void mark_done();

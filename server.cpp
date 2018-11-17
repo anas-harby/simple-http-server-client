@@ -36,7 +36,7 @@ void server::init() {
     }
 
     // Set address fields
-        server::address.sin_family = AF_INET;
+    server::address.sin_family = AF_INET;
     server::address.sin_addr.s_addr = INADDR_ANY;
     server::address.sin_port = htons(static_cast<uint16_t>(server::port_number));
 
@@ -48,7 +48,8 @@ void server::init() {
     }
 
     // Initiate working thread cleanup service
-    working_thread *th_cleanup = new working_thread(&server::cleanup_working_threads);
+    std::thread *th = new std::thread(&server::cleanup_working_threads, this);
+    working_thread *th_cleanup = new working_thread(th);
     th_cleanup->detach();
 }
 
@@ -67,7 +68,6 @@ void server::start() {
             continue;
 
         server::dispatch(connection_socket);
-        break;
     }
 }
 
@@ -81,39 +81,32 @@ void server::handle_request(int connection_socket) {
 }
 
 void server::dispatch(int connection_socket) {
-    working_thread *th = new working_thread(&server::handle_request, connection_socket);
+    std::thread *th = new std::thread(&server::handle_request, this, connection_socket);
+    working_thread *wrk_th = new working_thread(th);
 
     server::threads_mtx.lock();
-    server::working_threads[th->get_thread_id()] = th;
+    server::working_threads[wrk_th->get_thread_id()] = wrk_th;
     server::threads_mtx.unlock();
 
-    th->detach();
+    wrk_th->detach();
 }
 
 void server::cleanup_working_threads() {
-    server::threads_mtx.lock();
-    // cleanup resources.
-    for (auto it = server::working_threads.cbegin(); it != server::working_threads.cend();) {
-        if (it->second->is_done()) {
-            delete it->second;
-            server::working_threads.erase(it++);
+    while (true) {
+        server::threads_mtx.lock();
+        // cleanup resources.
+        for (auto it = server::working_threads.cbegin(); it != server::working_threads.cend();) {
+            if (it->second->is_done()) {
+                delete it->second;
+                server::working_threads.erase(it++);
+            } else
+                it++;
         }
-        else
-            it++;
+
+        server::threads_mtx.unlock();
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
-
-    server::threads_mtx.unlock();
-    // sleep for 500ms
 }
-
-//int Server::get_port_number() const {
-//    return Server::port_number;
-//}
-//
-//void Server::set_port_number(int port_number) {
-//    Server::port_number = port_number;
-//}
-//
 
 int main(int argc, char **args) {
     int port_number = read_port_number(argc, args);
@@ -122,62 +115,3 @@ int main(int argc, char **args) {
     serv.start();
     return 0;
 }
-
-//int main(int argc, char **args) {
-//    int port_number = read_port_number(argc, args);
-//    std::cout << port_number << std::endl;
-//    auto *server = new Server(port_number);
-//
-//    // Variables Definitions
-//    int server_fd, connection_socket, value_read;
-//    struct sockaddr_in address{};
-//    int opt = 1;
-//    int address_len = sizeof(address);
-//    char buffer[1024] = {0};
-//    auto *hello = const_cast<char *>("Hello from server");
-//
-//    // Creating socket file descriptor
-//    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-//    {
-//        perror("socket failed");
-//        exit(EXIT_FAILURE);
-//    }
-//
-//    // Forcefully attaching socket to the port
-//    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
-//                   &opt, sizeof(opt)))
-//    {
-//        perror("setsockopt");
-//        exit(EXIT_FAILURE);
-//    }
-//
-//    // Set address fields
-//    address.sin_family = AF_INET;
-//    address.sin_addr.s_addr = INADDR_ANY;
-//    address.sin_port = htons(static_cast<uint16_t>(server->get_port_number()));
-//
-//    // Assigns the local internet address and port for a socket
-//    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
-//    {
-//        perror("bind failed");
-//        exit(EXIT_FAILURE);
-//    }
-//
-//    if (listen(server_fd, 3) < 0) // Max 3 connections
-//    {
-//        perror("listen");
-//        exit(EXIT_FAILURE);
-//    }
-//
-//    if ((connection_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&address_len)) < 0)
-//    {
-//        perror("accept");
-//        exit(EXIT_FAILURE);
-//    }
-//
-//    value_read = static_cast<int>(read(connection_socket , buffer, 1024));
-//    std::cout << buffer << std::endl;
-//    send(connection_socket , hello, strlen(hello) , 0);
-//    std::cout << "Hello message sent"  << std::endl;
-//    return 0;
-//}
