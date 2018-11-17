@@ -3,6 +3,7 @@
 #include <netinet/in.h>
 #include "server.h"
 #include <cstring>
+#include <unistd.h>
 
 int read_port_number(int argc, char **args) {
     if (argc != 2) {
@@ -74,7 +75,9 @@ void server::start() {
 void server::handle_request(int connection_socket) {
     std::cout << std::this_thread::get_id() << " TEST\n";
     std::cout << connection_socket << " Conn\n";
-
+    char buffer[1024];
+    int valread = read(connection_socket , buffer, 1024);
+    printf("%s\n", buffer);
     server::threads_mtx.lock();
     server::working_threads[std::this_thread::get_id()]->mark_done();
     server::threads_mtx.unlock();
