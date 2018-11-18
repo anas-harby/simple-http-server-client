@@ -53,7 +53,6 @@ http_request parser::parse(std::string ss) {
 http_response get_response_get(http_request req) {
     http_response http_res;
     std::string file_path = req.get_file_path();
-
     if (!filesys::exists(file_path))
         http_res.set_status_code(http_response::status::NOT_FOUND);
     else {
@@ -74,7 +73,27 @@ http_response get_response_get(http_request req) {
 }
 
 http_response get_response_post(http_request req) {
-    return http_response();
+    http_response http_res;
+    int succ = 0;    
+    if (req.get_headers().find("Content-Length")
+            == req.get_headers().end())
+        succ = filesys::write(req.get_file_path(), req.get_data());
+    else
+        succ = filesys::write(req.get_file_path(), req.get_data(),
+            std::stoi(req.get_headers().find("Content-Length")->second));
+
+    if (succ != -1) {
+        http_res.set_status_code(http_response::status::OK);
+        http_res.add_header("Last-Modified", time_to_string(filesys::last_modified(req.get_file_path())));
+        http_res.add_header("Content-Length", std::to_string((int) filesys::filesize(req.get_file_path())));
+    } else
+        http_res.set_status_code(http_response::status::BAD_REQUEST);
+
+    time_t now; time(&now);
+    http_res.add_header("Date", time_to_string(now));
+    http_res.add_header("Server", "Simpleton-Server/1.0.0");
+
+    return http_res;
 }
 
 

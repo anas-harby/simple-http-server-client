@@ -25,16 +25,22 @@ std::string filesys::read(std::string path) {
     return data;
 }
 
-int filesys::read_bytes(std::string path, void *data, int len) {
-    FILE *fp = fopen(path.c_str(), "rb");
-    int read = fread(data, 1, len, fp);
-    fclose(fp);
-    return read;
-}
-
-int filesys::write_bytes(std::string path, void *data, int len) {
+int filesys::write(std::string path, const std::string &data, int len) {
+    if (len == -1)
+        len = data.size();
+    if (path[0] == '/')
+        path = path.substr(1);
+        
+    if (path.find("/") != std::string::npos) {
+        std::string dir = path.substr(0, path.find_last_of("/"));
+        struct stat info;
+        if (stat(dir.c_str(), &info) != 0) // Directory does not exist.
+            return -1;
+    }
+    // write contents
     FILE *fp = fopen(path.c_str(), "wb+");
-    int written = fwrite(data, 1, len, fp);
+    int written = fwrite(data.c_str(), 1, len, fp);
+    std::fflush(fp);
     fclose(fp);
     return written;
 }

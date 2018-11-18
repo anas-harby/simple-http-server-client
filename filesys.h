@@ -14,8 +14,7 @@ namespace filesys {
     time_t last_modified(std::string path);
     
     std::string read(std::string path);
-    int read_bytes(std::string path, void *data, int len);
-    int write_bytes(std::string path, void *data, int len);
+    int write(std::string path, const std::string &data, int len = -1);
 };
 
 #endif

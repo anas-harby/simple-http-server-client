@@ -4,6 +4,7 @@
 #include "server.h"
 #include "parser.h"
 #include <cstring>
+#include <sstream>
 #include <unistd.h>
 
 int read_port_number(int argc, char **args) {
@@ -77,9 +78,13 @@ void server::handle_request(int connection_socket) {
     char buffer[1024];
     ssize_t value_read = read(connection_socket , buffer, 1024);
     std::string str(buffer);
+    
     http_request req = parser::parse(str);
     http_response res = parser::get_response(req);
-    std::cout << res;
+    
+    std::stringstream res_ss;
+    res_ss << res;
+    send(connection_socket, res_ss.str().c_str(), res_ss.str().size(), 0);
 
     server::threads_mtx.lock();
     server::working_threads[std::this_thread::get_id()]->mark_done();
