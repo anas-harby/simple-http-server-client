@@ -88,10 +88,12 @@ http_response parser::get_response(http_request req) {
 }
 
 std::string get_content_type(std::string file_name) {
-    std::string extension = file_name.substr(file_name.find_last_of("."));
+    std::string extension = file_name.substr(file_name.find_last_of(".") + 1);
 
     if (extension.compare("html") == 0)
         return "text/html";
+    else if (extension.compare("htm") == 0)
+        return "text/htm";
     else if (extension.compare("txt") == 0)
         return "text/txt";
     else if (extension.compare("css") == 0)

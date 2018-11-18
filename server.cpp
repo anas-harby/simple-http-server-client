@@ -80,12 +80,6 @@ void server::handle_request(int connection_socket) {
     http_request req = parser::parse(str);
     http_response res = parser::get_response(req);
     std::cout << res;
-    // std::cout << "Version: " << req.get_version() << std::endl;
-    // std::cout << "Headers: \n";
-    // for (auto header : req.get_headers()) {
-    //     std:: cout << header.first << "->" << header.second << std::endl;
-    // }
-    // std::cout << "Data: " << std::endl << req.get_data() << std::endl;
 
     server::threads_mtx.lock();
     server::working_threads[std::this_thread::get_id()]->mark_done();

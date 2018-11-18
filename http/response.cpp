@@ -1,12 +1,48 @@
-////
-//// Created by awalid on 11/17/18.
-////
-//
-//#include "response.h"
-//
-//std::ostream &
-//http_response::http_get_response::operator<<(std::ostream &strm, const http_response::http_get_response &response) {
-////    return strm << "HTTP/1.1 200 OK";
-//    return strm;
-//}
-//
+#include "response.h"
+
+http_response::http_response() {
+
+}
+
+const std::map<std::string, std::string> &http_response::get_headers() const {
+    return headers;
+}
+
+void http_response::add_header(std::string key_header, std::string key_value) {
+    http_response::headers[key_header] = std::move(key_value);   
+}
+
+http_response::response_type http_response::get_type() const {
+    return http_response::type;
+}
+
+void http_response::set_type(http_response::response_type type) {
+    http_response::type = type;
+}
+
+const std::string &http_response::get_body() const {
+    return http_response::body;
+}
+
+void http_response::set_body(const std::string &body) {
+    http_response::body = body;
+}
+
+int http_response::get_status_code() const {
+    return http_response::status_code;
+}
+
+void http_response::set_status_code(const int s) {
+    http_response::status_code = s;
+}
+
+std::ostream& operator <<(std::ostream &strm, const http_response &response) {
+    strm << "HTTP/1.1 " << response.get_status_code() << " " << response.get_reason_phrase();
+    strm << "\r\n";
+    for (auto header : response.get_headers())
+        strm << header.first << ": " << header.second << "\r\n";
+    strm << "\r\n";
+    strm << response.body;
+    return strm;
+}
+

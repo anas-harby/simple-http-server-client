@@ -22,7 +22,6 @@ std::string filesys::read(std::string path) {
     std::ifstream ifs(path);
     std::string data((std::istreambuf_iterator<char>(ifs)),
                      std::istreambuf_iterator<char>());
-    std::cout << data << std::endl;
     return data;
 }
 

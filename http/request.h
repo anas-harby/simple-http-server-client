@@ -16,7 +16,6 @@ public:
     };
 
     http_request();
-    request_type get_request_type();
     friend std::ostream& operator <<(std::ostream &strm, const http_request &request);
 
 private:
