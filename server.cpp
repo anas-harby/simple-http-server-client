@@ -78,15 +78,14 @@ void server::handle_request(int connection_socket) {
     ssize_t value_read = read(connection_socket , buffer, 1024);
     std::string str(buffer);
     http_request req = parser::parse(str);
-
-    std::cout << "TYPE: " << req.get_type() << std::endl;
-    std::cout << "Filename: " << req.get_file_path() << std::endl;
-    std::cout << "Version: " << req.get_version() << std::endl;
-    std::cout << "Headers: \n";
-    for (auto header : req.get_headers()) {
-        std:: cout << header.first << "->" << header.second << std::endl;
-    }
-    std::cout << "Data: " << std::endl << req.get_data() << std::endl;
+    http_response res = parser::get_response(req);
+    std::cout << res;
+    // std::cout << "Version: " << req.get_version() << std::endl;
+    // std::cout << "Headers: \n";
+    // for (auto header : req.get_headers()) {
+    //     std:: cout << header.first << "->" << header.second << std::endl;
+    // }
+    // std::cout << "Data: " << std::endl << req.get_data() << std::endl;
 
     server::threads_mtx.lock();
     server::working_threads[std::this_thread::get_id()]->mark_done();
@@ -115,7 +114,6 @@ void server::cleanup_working_threads() {
             } else
                 it++;
         }
-
         server::threads_mtx.unlock();
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
