@@ -7,9 +7,12 @@
 
 
 #include "http/request.h"
+#include "http/response.h"
 
 namespace parser {
     http_request parse(std::string ss);
+
+    http_response get_response(http_request req);
 };
 
 

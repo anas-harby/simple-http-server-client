@@ -6,6 +6,10 @@
 #include "parser.h"
 #include <boost/algorithm/string.hpp>
 #include <iostream>
+#include "filesys.h"
+
+std::string time_to_string(time_t t);
+std::string get_content_type(std::string file_name);
 
 http_request parser::parse(std::string ss) {
     http_request http_req;
@@ -44,4 +48,71 @@ http_request parser::parse(std::string ss) {
     }
     http_req.set_data(body);
     return http_req;
+}
+
+http_response get_response_get(http_request req) {
+    http_response http_res;
+    std::string file_path = req.get_file_path();
+
+    if (!filesys::exists(file_path))
+        http_res.set_status_code(http_response::status::NOT_FOUND);
+    else {
+        http_res.set_body(filesys::read(file_path));
+        http_res.set_status_code(http_response::status::OK);
+        
+        http_res.add_header("Last-Modified", time_to_string(filesys::last_modified(file_path)));
+        http_res.add_header("Content-Length", std::to_string((int) filesys::filesize(file_path)));
+        http_res.add_header("Content-Type", get_content_type(file_path));
+        http_res.add_header("Connection", "Closed");
+    }
+    
+    time_t now; time(&now);
+    http_res.add_header("Date", time_to_string(now));
+    http_res.add_header("Server", "Simpleton-Server/1.0.0");
+    
+    return http_res;
+}
+
+http_response get_response_post(http_request req) {
+    return http_response();
+}
+
+
+http_response parser::get_response(http_request req) {
+    if (req.get_type() == http_request::request_type::GET)
+        return get_response_get(req);
+    else if (req.get_type() == http_request::request_type::POST)
+        return get_response_post(req);
+    else
+        perror("Unsupported request type");
+}
+
+std::string get_content_type(std::string file_name) {
+    std::string extension = file_name.substr(file_name.find_last_of(".") + 1);
+
+    if (extension.compare("html") == 0)
+        return "text/html";
+    else if (extension.compare("htm") == 0)
+        return "text/htm";
+    else if (extension.compare("txt") == 0)
+        return "text/txt";
+    else if (extension.compare("css") == 0)
+        return "text/css";
+    else if (extension.compare("js") == 0)
+        return "text/javascript";
+    else if (extension.compare("jpg") == 0)
+        return "image/jpg";
+    else if (extension.compare("jpeg") == 0)
+        return "image/jpeg";
+    else if (extension.compare("png") == 0)
+        return "image/png";
+    else if (extension.compare("gif") == 0)
+        return "image/gif";
+    return "unknown/unknown";
+}
+
+std::string time_to_string(time_t t) {
+    char *c_date = std::ctime(&t);
+    c_date[strlen(c_date) - 1] = '\0';
+    return std::string(c_date);
 }
