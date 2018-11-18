@@ -8,7 +8,7 @@
 
 int read_port_number(int argc, char **args) {
     if (argc != 2) {
-        std::cerr << "Invalid number of arguments!";
+        std::cerr << "Invalid number of arguments!\n";
         exit(EXIT_FAILURE);
     }
     return std::stoi(args[argc - 1]);
@@ -76,7 +76,9 @@ void server::start() {
 void server::handle_request(int connection_socket) {
     char buffer[1024];
     ssize_t value_read = read(connection_socket , buffer, 1024);
+    std::cout << buffer << std::endl << std::endl;
     std::string str(buffer);
+    std::cout << str << std::endl << std::endl;
     http_request req = parser::parse(str);
 
     std::cout << "TYPE: " << req.get_type() << std::endl;
@@ -123,7 +125,7 @@ void server::cleanup_working_threads() {
 
 int main(int argc, char **args) {
     int port_number = read_port_number(argc, args);
-    std::cout << port_number << std::endl;
+    std::cout << "Server listening on port: " << port_number <<  std::endl;
     server serv(port_number);
     serv.start();
     return 0;
