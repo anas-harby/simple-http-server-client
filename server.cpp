@@ -76,12 +76,10 @@ void server::start() {
 void server::handle_request(int connection_socket) {
     char buffer[1024];
     ssize_t value_read = read(connection_socket , buffer, 1024);
-    std::cout << buffer << std::endl << std::endl;
     std::string str(buffer);
-    std::cout << str << std::endl << std::endl;
     http_request req = parser::parse(str);
     http_response res = parser::get_response(req);
-    std::cout << res;
+    std::cout << res << std::endl;
 
     server::threads_mtx.lock();
     server::working_threads[std::this_thread::get_id()]->mark_done();

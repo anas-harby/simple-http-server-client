@@ -110,7 +110,6 @@ int main(int argc, const char *argv[]) {
             results.reserve(3);
         } else
             port = client::default_port;
-
         if (ss.open(server_ip, port)) {
 
             (*requestMap[results[0]])(results, ss);
