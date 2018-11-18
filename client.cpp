@@ -75,14 +75,22 @@ bool client::net::basic_socketstream<Char>::open(const std::string &host, uint16
     return !status;
 }
 
+void validate_arguments(int argc, const char **argv) {
+    if (argc != 4) {
+        std::cerr << "Invalid number of arguments!\n";
+        exit(EXIT_FAILURE);
+    }
+}
 
 int main(int argc, const char *argv[]) {
 
     int port;
+    validate_arguments(argc, argv);
     std::string server_ip = argv[argc - 3];
     client::net::socketstream ss;
     std::ifstream inFile;
     std::string s;
+
 
     inFile.open(argv[argc - 1]);
     if (!inFile) {
@@ -102,7 +110,6 @@ int main(int argc, const char *argv[]) {
             results.reserve(3);
         } else
             port = client::default_port;
-
         if (ss.open(server_ip, port)) {
 
             (*requestMap[results[0]])(results, ss);
@@ -114,3 +121,4 @@ int main(int argc, const char *argv[]) {
 
     return 0;
 }
+

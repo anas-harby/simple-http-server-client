@@ -14,11 +14,11 @@ std::string get_content_type(std::string file_name);
 http_request parser::parse(std::string ss) {
     http_request http_req;
     std::vector<std::string> request_lines, req_line_fields;
-    boost::split(request_lines, ss, boost::is_any_of("\n"));
+    boost::split(request_lines, ss, boost::is_any_of("\r\n"));
 
     // Parsing request line
     std::string req_line = request_lines[0];
-    boost::split(req_line_fields, req_line, boost::is_any_of("\t "));
+    boost::split(req_line_fields, req_line, [](char c) { return c == ' '; });
     if (req_line_fields[0] == "GET") {
         http_req.set_type(http_request::GET);
     } else if (req_line_fields[0] == "POST") {
@@ -30,6 +30,7 @@ http_request parser::parse(std::string ss) {
     // Parsing header lines
     int line_num;
     for (line_num = 1; line_num < request_lines.size(); line_num++) {
+
         if (request_lines[line_num].empty()) {
             line_num++;
             break;
