@@ -21,7 +21,30 @@ public:
 
 private:
     std::map<std::string, std::string> headers;
-    std::string request_line;
+public:
+    const std::map<std::string, std::string> &get_headers() const;
+
+    void add_header(std::string key_header, std::string key_value);
+
+    request_type get_type() const;
+
+    void set_type(request_type type);
+
+    const std::string &get_file_path() const;
+
+    void set_file_path(const std::string &file_path);
+
+    const std::string &get_version() const;
+
+    void set_version(const std::string &version);
+
+    const std::string &get_data() const;
+
+    void set_data(const std::string &data);
+
+private:
+    request_type type;
+    std::string file_path, version;
     std::string data;
 };
 
