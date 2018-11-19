@@ -24,7 +24,9 @@ void request::init() {
 void GET(const std::vector<std::string> &results, client::net::socketstream &ss) {
     std::stringstream iss;
     iss << "GET " << results[1] << " " << client::http_version << "\r\n";
+    iss << "User-Agent: Mozilla/4.0 (compatible; MSIE5.01; Windows NT)\r\n";
     iss << "Host: " << results[2] << "\r\n";
+    iss << "Accept-Language: en-us\r\n";
     iss << "Connection: close" << "\r\n";
     iss << "Accept: text/html" << "\r\n";
     iss << "\r\n";
