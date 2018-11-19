@@ -15,6 +15,16 @@ public:
         POST
     };
 
+    inline std::string get_request_type_string() const {
+        if (http_request::type == http_request::GET) {
+            return "GET";
+        } else if (http_request::type == http_request::POST) {
+            return "POST";
+        } else {
+            return "UNKNOWN";
+        }
+    }
+
     http_request();
     friend std::ostream& operator <<(std::ostream &strm, const http_request &request);
 

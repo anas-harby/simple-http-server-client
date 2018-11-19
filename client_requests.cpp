@@ -50,7 +50,6 @@ void POST(const std::vector<std::string> &results, client::net::socketstream &ss
     iss << "Content-Length: " << data.length() << "\r\n";
     iss << "\r\n";
     iss << data << "\r\n";
-    iss << "\r\n";
     ss << iss.str() << std::flush;
     inFile.close();
 }

@@ -7,11 +7,17 @@
 #include <utility>
 #include <iostream>
 
-http_request::http_request() {
-
-}
+http_request::http_request() {}
 
 std::ostream &operator <<(std::ostream &strm, const http_request &request) {
+    strm << request.get_request_type_string() << " " << request.get_file_path() << " " << request.get_version() << "\r\n";
+    for (auto header : request.get_headers()) {
+        strm << header.first << ": " << header.second << "\r\n";
+    }
+    strm << "\r\n";
+    if (!request.get_data().empty()) {
+        strm << request.get_data() << "\r\n";
+    }
     return strm;
 }
 

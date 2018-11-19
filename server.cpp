@@ -7,14 +7,6 @@
 #include <sstream>
 #include <unistd.h>
 
-int read_port_number(int argc, char **args) {
-    if (argc != 2) {
-        std::cerr << "Invalid number of arguments!\n";
-        exit(EXIT_FAILURE);
-    }
-    return std::stoi(args[argc - 1]);
-}
-
 server::server(int port_number) {
     server::port_number = port_number;
     server::address = {};
@@ -78,21 +70,16 @@ void server::handle_request(int connection_socket) {
     char buffer[1024];
     ssize_t value_read = read(connection_socket , buffer, 1024);
     std::string str(buffer);
-    
+
+    // Parse request and print it to console
     http_request req = parser::parse(str);
+    std::cout << req << std::endl;
 
-    std::cout << "TYPE: " << req.get_type() << std::endl;
-    std::cout << "Filename: " << req.get_file_path() << std::endl;
-    std::cout << "Version: " << req.get_version() << std::endl;
-    std::cout << "Headers: \n";
-    for (auto header : req.get_headers()) {
-        std:: cout << header.first << "->" << header.second << std::endl;
-    }
-    std::cout << "Data: " << std::endl << req.get_data() << std::endl;
-
+    // Formulate response and print it to console
     http_response res = parser::get_response(req);
     std::cout << res << std::endl;
-    
+
+    // Send response back to client through connection socket
     std::stringstream res_ss;
     res_ss << res;
     send(connection_socket, res_ss.str().c_str(), res_ss.str().size(), 0);
@@ -129,10 +116,18 @@ void server::cleanup_working_threads() {
     }
 }
 
+int read_port_number(int argc, char **args) {
+    if (argc != 2) {
+        std::cerr << "Invalid number of arguments!\n";
+        exit(EXIT_FAILURE);
+    }
+    return std::stoi(args[argc - 1]);
+}
+
 int main(int argc, char **args) {
     int port_number = read_port_number(argc, args);
     std::cout << "Server listening on port: " << port_number <<  std::endl;
-    server serv(port_number);
-    serv.start();
+    server _server(port_number);
+    _server.start();
     return 0;
 }
