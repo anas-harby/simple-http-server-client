@@ -80,8 +80,17 @@ void server::handle_request(int connection_socket) {
     std::string str(buffer);
     
     http_request req = parser::parse(str);
+
+    std::cout << "TYPE: " << req.get_type() << std::endl;
+    std::cout << "Filename: " << req.get_file_path() << std::endl;
+    std::cout << "Version: " << req.get_version() << std::endl;
+    std::cout << "Headers: \n";
+    for (auto header : req.get_headers()) {
+        std:: cout << header.first << "->" << header.second << std::endl;
+    }
+    std::cout << "Data: " << std::endl << req.get_data() << std::endl;
+
     http_response res = parser::get_response(req);
-    
     std::cout << res << std::endl;
     
     std::stringstream res_ss;

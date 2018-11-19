@@ -19,8 +19,8 @@ if (Boost_FOUND)
 endif ()
 
 add_executable(server ${SERVER_SOURCE_FILES})
-add_executable(client ${CLIENT_SOURCE_FILES})
-#add_executable(client dummy_client.cpp)
+#add_executable(client ${CLIENT_SOURCE_FILES})
+add_executable(client dummy_client.cpp)
 
 if (Boost_FOUND)
 
