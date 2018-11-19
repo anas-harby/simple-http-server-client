@@ -5,43 +5,32 @@
 #include <cstring>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <iostream>
 
 # define PORT 8080
 
 int main(int argc, char const *argv[])
 {
     struct sockaddr_in address;
-    int sock = 0, valread;
+    int sock1 = 0, sock2 = 0, valread;
     struct sockaddr_in serv_addr;
-    char *hello = const_cast<char *>("POST hello.html HTTP/1.1\n"
-            "User-Agent: Mozilla/4.0 (compatible; MSIE5.01; Windows NT)\n"
-            "Host: www.tutorialspoint.com\n"
-            "Accept-Language: en-us\n"
-            "Accept-Encoding: gzip, deflate\n"
-            "Connection: Keep-Alive\n\n"
-            "<!DOCTYPE html>\n"
-            "<html>\n"
-            "  <head>\n"
-            "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
-            "    <link rel=\"stylesheet\" href=\"/style/style.css\">\n"
-            "    <link rel=\"stylesheet\" href=\"https://cdn.rawgit.com/twbs/bootstrap/48938155eb24b4ccdde09426066869504c6dab3c/dist/css/bootstrap.min.css\">\n"
-            "    <!-- <link rel=\"stylesheet\" href=\"vendor/bootstrap/css/bootstrap.min.css\" type=\"text/css\"> -->\n"
-            "    <link rel=\"stylesheet\" href=\"/css/business-casual.css\" type=\"text/css\">\n"
-            "    <script src=\"https://maps.googleapis.com/maps/api/js?key=AIzaSyAq06l5RUVfib62IYRQacLc-KAy0XIWAVs\"></script>\n"
-            "  </head>\n"
-            "  <body>\n"
-            "    <div class=\"container\"></div>\n"
-            "  </body>\n"
-            "  <script src=\"/bundle.js\"></script>\n"
-            "</html>");
-    // char *hello = const_cast<char *>("GET hello.html HTTP/1.1\n"
-    //         "User-Agent: Mozilla/4.0 (compatible; MSIE5.01; Windows NT)\n"
-    //         "Host: www.tutorialspoint.com\n"
-    //         "Accept-Language: en-us\n"
-    //         "Accept-Encoding: gzip, deflate\n"
-    //         "Connection: Keep-Alive\n\n");
-    char buffer[1024] = {0};
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    char *hello1 = const_cast<char *>("GET hello.html HTTP/1.1\r\n"
+            "User-Agent: Mozilla/4.0 (compatible; MSIE5.01; Windows NT)\r\n"
+            "Host: www.tutorialspoint.com\r\n"
+            "Accept-Language: en-us\r\n"
+            "Accept-Encoding: gzip, deflate\r\n"
+            "Connection: Keep-Alive\r\n"
+            "\r\n");
+    char *hello2 = const_cast<char *>("GET hello.html HTTP/1.1\r\n"
+            "User-Agent: Mozilla/4.0 (compatible; MSIE5.01; Windows NT)\r\n"
+            "Host: www.tutorialspoint.com\r\n"
+            "Accept-Language: en-us\r\n"
+            "Accept-Encoding: gzip, deflate\r\n"
+            "Connection: Keep-Alive\r\n"
+            "\r\n");
+
+    char buffer[1024] = {0}, buff2[1024] = {0};
+    if ((sock1 = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("\n Socket creation error \n");
         return -1;
@@ -59,15 +48,28 @@ int main(int argc, char const *argv[])
         return -1;
     }
 
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    if (connect(sock1, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
         printf("\nConnection Failed \n");
         return -1;
     }
+    send(sock1 , hello1, strlen(hello1), 0);
+    valread = static_cast<int>(read(sock1 , buffer, 1024));
+    std::cout << buffer << std::endl;
 
-    send(sock , hello, strlen(hello), 0);
-    printf("Hello kitty\n");
-    valread = static_cast<int>(read(sock , buffer, 1024));
-    printf("%s\n", buffer);
+    if ((sock2 = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+
+    if (connect(sock2, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
+    send(sock2, hello2, strlen(hello2), 0);
+    valread = static_cast<int>(read(sock2 , buff2, 1024));
+    std::cout << buff2 << std::endl;
     return 0;
 }

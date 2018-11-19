@@ -5,17 +5,19 @@
 #include <vector>
 #include "parser.h"
 #include <boost/algorithm/string.hpp>
-#include <iostream>
+#include <boost/tokenizer.hpp>
 #include "filesys.h"
 
 std::string time_to_string(time_t t);
 std::string get_content_type(std::string file_name);
 
-http_request parser::parse(std::string ss) {
+http_request parser::parse(std::string req_str) {
     http_request http_req;
     std::vector<std::string> request_lines, req_line_fields;
-    boost::split(request_lines, ss, boost::is_any_of("\r\n"));
-
+    // Alternative splitting, which is correct?
+    typedef boost::char_separator<char> separator;
+    boost::tokenizer<separator> tokens(req_str, separator("\r\n"));
+    std::copy(tokens.begin(), tokens.end(), std::back_inserter(request_lines));
     // Parsing request line
     std::string req_line = request_lines[0];
     boost::split(req_line_fields, req_line, [](char c) { return c == ' '; });
