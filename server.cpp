@@ -87,7 +87,8 @@ void server::handle_request(int connection_socket) {
     std::stringstream res_ss;
     res_ss << res;
     send(connection_socket, res_ss.str().c_str(), res_ss.str().size(), 0);
-
+    close(connection_socket);
+    
     server::threads_mtx.lock();
     server::working_threads[std::this_thread::get_id()]->mark_done();
     server::threads_mtx.unlock();
