@@ -7,8 +7,11 @@
 #include <sstream>
 #include <unistd.h>
 
+fd_set build_new_fd_set(int connection_socket);
+
 server::server(int port_number) {
     server::port_number = port_number;
+    server::cur_timeout = INITIAL_TIMEOUT;
     server::address = {};
     server::init();
 }
@@ -67,6 +70,25 @@ void server::start() {
 }
 
 void server::handle_request(int connection_socket) {
+    // select(): tries to find if there is a data that can be received
+    // within the timeout span currently set.
+    fd_set rfds = build_new_fd_set(connection_socket);
+    struct timeval tv = server::get_tv_from_timeout();
+    int retval = select(connection_socket + 1, &rfds, NULL, NULL, &tv);
+
+    if (!retval) {
+        perror ((std::string("Timeout reached for connection:")
+                + std::to_string(connection_socket)).c_str());
+
+        http_response res = parser::get_timeout_response();
+        std::cout << res << std::endl;
+
+        std::stringstream res_ss; res_ss << res;
+        send(connection_socket, res_ss.str().c_str(), res_ss.str().size(), 0);
+        server::finalize_connection(connection_socket);
+        return;
+    }
+
     char buffer[1024];
     ssize_t value_read = read(connection_socket , buffer, 1024);
     std::string str(buffer);
@@ -83,11 +105,8 @@ void server::handle_request(int connection_socket) {
     std::stringstream res_ss;
     res_ss << res;
     send(connection_socket, res_ss.str().c_str(), res_ss.str().size(), 0);
-    close(connection_socket);
     
-    server::threads_mtx.lock();
-    server::working_threads[std::this_thread::get_id()]->mark_done();
-    server::threads_mtx.unlock();
+    server::finalize_connection(connection_socket);
 }
 
 void server::dispatch(int connection_socket) {
@@ -104,7 +123,6 @@ void server::dispatch(int connection_socket) {
 void server::cleanup_working_threads() {
     while (true) {
         server::threads_mtx.lock();
-        // cleanup resources.
         for (auto it = server::working_threads.cbegin(); it != server::working_threads.cend();) {
             if (it->second->is_done()) {
                 delete it->second;
@@ -116,6 +134,29 @@ void server::cleanup_working_threads() {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
+
+void server::finalize_connection(int connection_socket) {
+    close(connection_socket);
+    
+    server::threads_mtx.lock();
+    server::working_threads[std::this_thread::get_id()]->mark_done();
+    server::threads_mtx.unlock();
+}
+
+struct timeval server::get_tv_from_timeout() {
+    struct timeval tv;
+    tv.tv_sec = server::cur_timeout / 1000;
+    tv.tv_usec = (server::cur_timeout % 1000) * 1000;
+    return tv;
+}
+
+fd_set build_new_fd_set(int connection_socket) {
+    fd_set rfds;
+    FD_ZERO(&rfds);
+    FD_SET(connection_socket, &rfds);
+    return rfds;
+}
+
 
 int read_port_number(int argc, char **args) {
     if (argc != 2) {

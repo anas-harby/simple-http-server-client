@@ -39,9 +39,11 @@ void http_response::set_status_code(const int s) {
 std::ostream& operator <<(std::ostream &strm, const http_response &response) {
     strm << "HTTP/1.1 " << response.get_status_code() << " " << response.get_reason_phrase();
     strm << "\r\n";
-    for (auto header : response.get_headers())
-        strm << header.first << ": " << header.second << "\r\n";
-    strm << "\r\n";
+    if (!response.get_headers().empty()) {
+        for (auto header : response.get_headers())
+            strm << header.first << ": " << header.second << "\r\n";
+        strm << "\r\n";
+    }
     strm << response.body;
     return strm;
 }

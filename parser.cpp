@@ -109,6 +109,12 @@ http_response parser::get_response(http_request req) {
         perror("Unsupported request type");
 }
 
+http_response parser::get_timeout_response() {
+    http_response http_res;
+    http_res.set_status_code(http_response::status::REQUEST_TIMEOUT);
+    return http_res;
+}
+
 std::string get_content_type(std::string file_name) {
     std::string extension = file_name.substr(file_name.find_last_of(".") + 1);
 

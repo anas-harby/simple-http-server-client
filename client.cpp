@@ -1,7 +1,3 @@
-//
-// Created by heshamovic on 11/16/18.
-//
-
 #include "client.h"
 #include "client_requests.h"
 #include "client_callback.h"
@@ -9,6 +5,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <chrono>
+#include <thread>
 
 template<typename Char>
 client::net::basic_socketbuf<Char>::basic_socketbuf() : sock(0) {
