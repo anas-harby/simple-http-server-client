@@ -105,9 +105,8 @@ int main(int argc, const char *argv[]) {
         std::vector<std::string> results;
         boost::split(results, s, [](char c) { return c == ' '; });
 
-        if (results.size() == 4) {
-            port = std::stoi(results[3]);
-            results.reserve(3);
+        if (results.size() == 3) {
+            port = std::stoi(results[2]);
         } else
             port = client::default_port;
         if (ss.open(server_ip, port)) {
@@ -115,6 +114,8 @@ int main(int argc, const char *argv[]) {
             (*requestMap[results[0]])(results, ss);
 
             (*callbackMap[results[0]])(results, ss);
+        }else {
+            std::cerr << "Failed to connect to the server" << std::endl;
         }
     }
 
