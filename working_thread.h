@@ -1,7 +1,3 @@
-//
-// Created by awalid on 11/17/18.
-//
-
 #ifndef SIMPLE_HTTP_SERVER_CLIENT_WORKING_THREAD_H
 #define SIMPLE_HTTP_SERVER_CLIENT_WORKING_THREAD_H
 

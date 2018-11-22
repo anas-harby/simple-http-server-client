@@ -5,6 +5,7 @@
 #include "parser.h"
 #include <cstring>
 #include <sstream>
+#include <math.h>
 #include <unistd.h>
 
 fd_set build_new_fd_set(int connection_socket);
@@ -115,6 +116,7 @@ void server::dispatch(int connection_socket) {
 
     server::threads_mtx.lock();
     server::working_threads[wrk_th->get_thread_id()] = wrk_th;
+    server::update_timeout();
     server::threads_mtx.unlock();
 
     wrk_th->detach();
@@ -123,16 +125,22 @@ void server::dispatch(int connection_socket) {
 void server::cleanup_working_threads() {
     while (true) {
         server::threads_mtx.lock();
-        for (auto it = server::working_threads.cbegin(); it != server::working_threads.cend();) {
+        for (auto it = server::working_threads.cbegin();
+                it != server::working_threads.cend();) {
             if (it->second->is_done()) {
                 delete it->second;
                 server::working_threads.erase(it++);
             } else
                 it++;
         }
+        server::update_timeout();
         server::threads_mtx.unlock();
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
+}
+
+int server::get_number_of_connections() {
+    return server::working_threads.size();
 }
 
 void server::finalize_connection(int connection_socket) {
@@ -145,9 +153,18 @@ void server::finalize_connection(int connection_socket) {
 
 struct timeval server::get_tv_from_timeout() {
     struct timeval tv;
+
+    server::threads_mtx.lock();
     tv.tv_sec = server::cur_timeout / 1000;
     tv.tv_usec = (server::cur_timeout % 1000) * 1000;
+    server::threads_mtx.unlock();
+
     return tv;
+}
+
+void server::update_timeout() {
+    server::cur_timeout = server::INITIAL_TIMEOUT *
+        pow((1 - server::TIMEOUT_DECAY_RATE), server::get_number_of_connections());
 }
 
 fd_set build_new_fd_set(int connection_socket) {
