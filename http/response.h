@@ -17,7 +17,8 @@ public:
         CREATED = 201,
         BAD_REQUEST = 400,
         FORBIDDEN = 403,
-        NOT_FOUND = 404
+        NOT_FOUND = 404,
+        REQUEST_TIMEOUT = 408
     };
 
     inline std::string get_reason_phrase() const {
@@ -32,6 +33,8 @@ public:
                 return "Forbidden";
             case NOT_FOUND:
                 return "Not Found";
+            case REQUEST_TIMEOUT:
+                return "Request Timeout";
             default:
                 return "Unknown Status";
         }
@@ -57,10 +60,14 @@ public:
     int get_status_code() const;
     void set_status_code(const int s);
 
+    std::string get_version() const;
+    void set_version(const std::string version);
+
 private:
     response_type type;
     int status_code;
-
+    std::string version;
+    
     std::string body;
 };
 

@@ -18,6 +18,7 @@ http_request parser::parse(std::string req_str) {
     typedef boost::char_separator<char> separator;
     boost::tokenizer<separator> tokens(req_str, separator("\r\n"));
     std::copy(tokens.begin(), tokens.end(), std::back_inserter(request_lines));
+
     // Parsing request line
     std::string req_line = request_lines[0];
     boost::split(req_line_fields, req_line, [](char c) { return c == ' '; });
@@ -56,6 +57,7 @@ http_request parser::parse(std::string req_str) {
 http_response get_response_get(http_request req) {
     http_response http_res;
     std::string file_path = req.get_file_path();
+
     if (!filesys::exists(file_path))
         http_res.set_status_code(http_response::status::NOT_FOUND);
     else {
@@ -71,15 +73,16 @@ http_response get_response_get(http_request req) {
     time_t now; time(&now);
     http_res.add_header("Date", time_to_string(now));
     http_res.add_header("Server", "Simpleton-Server/1.0.0");
-    
+
+    http_res.set_version(req.get_version());
     return http_res;
 }
 
 http_response get_response_post(http_request req) {
     http_response http_res;
-    int succ = 0;    
-    if (req.get_headers().find("Content-Length")
-            == req.get_headers().end())
+    int succ = 0;
+
+    if (req.get_headers().find("Content-Length") == req.get_headers().end())
         succ = filesys::write(req.get_file_path(), req.get_data());
     else
         succ = filesys::write(req.get_file_path(), req.get_data(),
@@ -96,22 +99,28 @@ http_response get_response_post(http_request req) {
     http_res.add_header("Date", time_to_string(now));
     http_res.add_header("Server", "Simpleton-Server/1.0.0");
 
+    http_res.set_version(req.get_version());
     return http_res;
 }
-
 
 http_response parser::get_response(http_request req) {
     if (req.get_type() == http_request::request_type::GET)
         return get_response_get(req);
     else if (req.get_type() == http_request::request_type::POST)
         return get_response_post(req);
-    else
-        perror("Unsupported request type");
+    
+    perror("Unsupported request type");
+    return http_response();
+}
+
+http_response parser::get_timeout_response() {
+    http_response http_res;
+    http_res.set_status_code(http_response::status::REQUEST_TIMEOUT);
+    return http_res;
 }
 
 std::string get_content_type(std::string file_name) {
     std::string extension = file_name.substr(file_name.find_last_of(".") + 1);
-
     if (extension.compare("html") == 0)
         return "text/html";
     else if (extension.compare("htm") == 0)

@@ -13,6 +13,7 @@ namespace parser {
     http_request parse(std::string req_str);
 
     http_response get_response(http_request req);
+    http_response get_timeout_response();
 };
 
 

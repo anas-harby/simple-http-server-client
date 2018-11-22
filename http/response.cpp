@@ -36,12 +36,22 @@ void http_response::set_status_code(const int s) {
     http_response::status_code = s;
 }
 
+std::string http_response::get_version() const {
+    return http_response::version;
+}
+
+void http_response::set_version(const std::string version) {
+    http_response::version = version;
+}
+
 std::ostream& operator <<(std::ostream &strm, const http_response &response) {
-    strm << "HTTP/1.1 " << response.get_status_code() << " " << response.get_reason_phrase();
+    strm << response.get_version() << " " << response.get_status_code() << " " << response.get_reason_phrase();
     strm << "\r\n";
-    for (auto header : response.get_headers())
-        strm << header.first << ": " << header.second << "\r\n";
-    strm << "\r\n";
+    if (!response.get_headers().empty()) {
+        for (auto header : response.get_headers())
+            strm << header.first << ": " << header.second << "\r\n";
+        strm << "\r\n";
+    }
     strm << response.body;
     return strm;
 }
