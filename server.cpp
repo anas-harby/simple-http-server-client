@@ -92,10 +92,6 @@ void server::handle_request(int connection_socket) {
         return;
     }
 
-    char buffer[1024];
-    ssize_t value_read = read(connection_socket , buffer, 1024);
-    std::string str(buffer);
-
     // Parse request and print it to console
     http_request req = parser::parse(connection_socket);
     std::cout << req << std::endl;
@@ -107,7 +103,7 @@ void server::handle_request(int connection_socket) {
     // Send response back to client through connection socket
     std::stringstream res_ss;
     res_ss << res;
-    send(connection_socket, res_ss.str().c_str(), res_ss.str().size(), 0);
+    send(connection_socket, res_ss.str().c_str(), res_ss.str().length(), 0);
     
     server::finalize_connection(connection_socket);
 }

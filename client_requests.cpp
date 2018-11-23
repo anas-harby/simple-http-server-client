@@ -40,7 +40,7 @@ void request::POST(const std::string file_name, const std::string http_version, 
     std::string data((std::istreambuf_iterator<char>(inFile)),
                     std::istreambuf_iterator<char>());
 
-    iss << "POST " << file_name << "" << http_version << "\r\n";
+    iss << "POST " << file_name << " " << http_version << "\r\n";
     iss << "Host: " << host << "\r\n";
     iss << "Content-Type: application/x-www-form-urlencoded" << "\r\n";
     iss << "Content-Length: " << data.length() << "\r\n";
