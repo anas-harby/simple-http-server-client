@@ -12,23 +12,25 @@
 std::string time_to_string(time_t t);
 std::string get_content_type(std::string file_name);
 
-void read_req_from_socket(const int socket, std::vector<std::string> &request_lines, size_t buf_size) {
-    char buffer[buf_size];
+std::string read_req_from_socket(const int socket, size_t buf_size) {
+    char buffer[buf_size + 1] = {0};
     ssize_t value_read = recv(socket, buffer, buf_size, 0);
+    buffer[buf_size] = '\0';
     if (value_read == -1) {
         std::cerr << "Failed to read from socket" << std::endl;
         exit(EXIT_FAILURE);
     }
-
-    // Splitting request into vector of strings(lines)
-    request_lines.clear();
-    std::string str = std::string(buffer);
-    boost::split(request_lines, str, boost::is_any_of("\n"));
+    return std::string(buffer);
 }
 
-void parse_req_line(std::vector<std::string> &request_lines, int &line_no, http_request &http_req) {
+void parse_headers(std::string &req_str, http_request &http_req) {
+    // Splitting the string
+    std::vector<std::string> lines;
+    boost::split(lines, req_str, boost::is_any_of("\n"));
+
+    // Parsing request line
     std::vector<std::string> req_line_fields;
-    std::string req_line = request_lines[line_no++];
+    std::string req_line = lines[0];
     boost::split(req_line_fields, req_line, [](char c) { return c == ' '; });
     if (req_line_fields[0] == "GET") {
         http_req.set_type(http_request::GET);
@@ -39,24 +41,15 @@ void parse_req_line(std::vector<std::string> &request_lines, int &line_no, http_
     boost::trim(req_line_fields[2]);
     http_req.set_file_path(req_line_fields[1]);
     http_req.set_version(req_line_fields[2]);
-}
 
-bool parse_headers(std::vector<std::string> &request_lines, int &line_no, http_request &http_req) {
-    bool found_delim = false;
-    for (line_no; line_no < request_lines.size(); line_no++) {
-
-        if (request_lines[line_no] == "\r") {
-            found_delim = true;
-            line_no++;
-            break;
-        }
+    // Parsing headers
+    for (int i = 1; i < lines.size(); i++) {
         std::vector<std::string> header_fields;
-        boost::split(header_fields, request_lines[line_no], boost::is_any_of(":"));
+        boost::split(header_fields, lines[i], boost::is_any_of(":"));
         boost::trim(header_fields[0]);
         boost::trim(header_fields[1]);
         http_req.add_header(header_fields[0], header_fields[1]);
     }
-    return found_delim;
 }
 
 void parse_body(std::vector<std::string> &request_lines, int &line_no, http_request &http_req) {
@@ -69,24 +62,27 @@ void parse_body(std::vector<std::string> &request_lines, int &line_no, http_requ
 
 http_request parser::parse(const int socket) {
     http_request http_req;
-    std::vector<std::string> request_lines;
-    read_req_from_socket(socket, request_lines, parser::BUFF_SIZE);
 
-    int line_no = 0;
-    parse_req_line(request_lines, line_no, http_req);
+    // Reading request line and headers
+    std::string request_str = read_req_from_socket(socket, parser::MAX_HEADERS_SIZE);
 
-    while (!parse_headers(request_lines, line_no, http_req)) {
-        read_req_from_socket(socket, request_lines, parser::BUFF_SIZE);
-        line_no = 0;
+    size_t delim_pos = request_str.find("\r\n\r\n");
+    if (delim_pos == std::string::npos) {
+        // Should return a response of 413 Entity too large to client
+        std::cerr << "413 Entity too large" << std::endl;
+        exit(1);
     }
+    std::string headers_str = request_str.substr(0, delim_pos + 1);
+    parse_headers(headers_str, http_req);
 
     if (http_req.get_type() == http_request::POST) {
-        parse_body(request_lines, line_no, http_req); // Append rest of buffer to body
+        std::string body_chunk_read = request_str.substr(delim_pos + 4);
+        http_req.append_to_body(body_chunk_read);
+        // Check if content-length isn't found in the headers, return error.
         size_t content_length = static_cast<size_t>(std::stoi(http_req.get_header_value("Content-Length")));
-        if (content_length > http_req.get_body().length()) {
-            read_req_from_socket(socket, request_lines, content_length);
-            line_no = 0;
-            parse_body(request_lines, line_no, http_req);
+        while (content_length > http_req.get_body().length()) {
+            std::string body_chunk = read_req_from_socket(socket, parser::CHUNK_SIZE);
+            http_req.append_to_body(body_chunk);
         }
     }
     return http_req;

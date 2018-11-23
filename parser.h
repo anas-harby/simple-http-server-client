@@ -10,7 +10,8 @@
 #include "http/response.h"
 
 namespace parser {
-    const int BUFF_SIZE = 8192;
+    const int CHUNK_SIZE = 8192;
+    const int MAX_HEADERS_SIZE = 16384;
 
     http_request parse(int socket);
     http_response get_response(http_request req);

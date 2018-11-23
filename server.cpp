@@ -6,6 +6,8 @@
 #include <cstring>
 #include <sstream>
 #include <unistd.h>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string.hpp>
 
 server::server(int port_number) {
     server::port_number = port_number;

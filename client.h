@@ -33,7 +33,7 @@ namespace client {
         protected:
 
             static const int char_size = sizeof(char_type);
-            static const int SIZE = 3145728;
+            static const int SIZE = 4096;
             char_type obuf[SIZE];
             char_type ibuf[SIZE];
 

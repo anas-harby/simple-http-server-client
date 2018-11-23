@@ -48,8 +48,6 @@ public:
 
     const std::string &get_body() const;
 
-    void set_body(const std::string &body);
-
     void append_to_body(const std::string &s);
 
     const std::string &get_header_value(const std::string &key);
@@ -59,7 +57,6 @@ private:
     std::string file_path, version;
     std::map<std::string, std::string> headers;
     std::string body;
-
 };
 
 #endif //SIMPLE_HTTP_SERVER_CLIENT_REQUEST_H
