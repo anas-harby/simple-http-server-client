@@ -10,8 +10,9 @@
 #include "http/response.h"
 
 namespace parser {
-    http_request parse(std::string req_str);
+    const int BUFF_SIZE = 8192;
 
+    http_request parse(int socket);
     http_response get_response(http_request req);
 };
 

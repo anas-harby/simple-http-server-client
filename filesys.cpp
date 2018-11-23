@@ -29,8 +29,8 @@ std::string filesys::read(std::string path) {
 int filesys::write(std::string path, const std::string &data, int len) {
     if (len == -1)
         len = data.size();
-    if (path[0] == '/')
-        path = path.substr(1);
+//    if (path[0] == '/')
+//        path = path.substr(1);
         
     if (path.find("/") != std::string::npos) {
         std::string dir = path.substr(0, path.find_last_of("/"));

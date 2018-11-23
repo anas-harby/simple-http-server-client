@@ -15,9 +15,10 @@ std::ostream &operator <<(std::ostream &strm, const http_request &request) {
         strm << header.first << ": " << header.second << "\r\n";
     }
     strm << "\r\n";
-    if (!request.get_data().empty()) {
-        strm << request.get_data() << "\r\n";
-    }
+//    if (!request.get_body().empty()) {
+//        strm << request.get_body();
+//    }
+//    strm << std::flush;
     return strm;
 }
 
@@ -53,10 +54,18 @@ void http_request::set_version(const std::string &version) {
     http_request::version = version;
 }
 
-const std::string &http_request::get_data() const {
-    return data;
+const std::string &http_request::get_body() const {
+    return body;
 }
 
-void http_request::set_data(const std::string &data) {
-    http_request::data = data;
+void http_request::set_body(const std::string &body) {
+    http_request::body = body;
+}
+
+const std::string &http_request::get_header_value(const std::string &key) {
+    return http_request::headers[key];
+}
+
+void http_request::append_to_body(const std::string &s) {
+    http_request::body.append(s);
 }

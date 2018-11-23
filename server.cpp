@@ -67,12 +67,8 @@ void server::start() {
 }
 
 void server::handle_request(int connection_socket) {
-    char buffer[1024];
-    ssize_t value_read = read(connection_socket , buffer, 1024);
-    std::string str(buffer);
-
     // Parse request and print it to console
-    http_request req = parser::parse(str);
+    http_request req = parser::parse(connection_socket);
     std::cout << req << std::endl;
 
     // Formulate response and print it to console

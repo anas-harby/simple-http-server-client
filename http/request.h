@@ -7,6 +7,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 class http_request {
 public:
@@ -26,11 +27,9 @@ public:
     }
 
     http_request();
+
     friend std::ostream& operator <<(std::ostream &strm, const http_request &request);
 
-private:
-    std::map<std::string, std::string> headers;
-public:
     const std::map<std::string, std::string> &get_headers() const;
 
     void add_header(std::string key_header, std::string key_value);
@@ -47,14 +46,20 @@ public:
 
     void set_version(const std::string &version);
 
-    const std::string &get_data() const;
+    const std::string &get_body() const;
 
-    void set_data(const std::string &data);
+    void set_body(const std::string &body);
+
+    void append_to_body(const std::string &s);
+
+    const std::string &get_header_value(const std::string &key);
 
 private:
     request_type type;
     std::string file_path, version;
-    std::string data;
+    std::map<std::string, std::string> headers;
+    std::string body;
+
 };
 
 #endif //SIMPLE_HTTP_SERVER_CLIENT_REQUEST_H

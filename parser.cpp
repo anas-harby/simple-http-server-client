@@ -5,53 +5,94 @@
 #include <vector>
 #include "parser.h"
 #include <boost/algorithm/string.hpp>
-#include <boost/tokenizer.hpp>
+#include <boost/regex.hpp>
+#include <sys/socket.h>
 #include "filesys.h"
 
 std::string time_to_string(time_t t);
 std::string get_content_type(std::string file_name);
 
-http_request parser::parse(std::string req_str) {
-    http_request http_req;
-    std::vector<std::string> request_lines, req_line_fields;
-    // Alternative splitting, which is correct?
-    typedef boost::char_separator<char> separator;
-    boost::tokenizer<separator> tokens(req_str, separator("\r\n"));
-    std::copy(tokens.begin(), tokens.end(), std::back_inserter(request_lines));
-    // Parsing request line
-    std::string req_line = request_lines[0];
+void read_req_from_socket(const int socket, std::vector<std::string> &request_lines, size_t buf_size) {
+    char buffer[buf_size];
+    ssize_t value_read = recv(socket, buffer, buf_size, 0);
+    if (value_read == -1) {
+        std::cerr << "Failed to read from socket" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // Splitting request into vector of strings(lines)
+    request_lines.clear();
+    std::string str = std::string(buffer);
+    boost::split(request_lines, str, boost::is_any_of("\n"));
+}
+
+void parse_req_line(std::vector<std::string> &request_lines, int &line_no, http_request &http_req) {
+    std::vector<std::string> req_line_fields;
+    std::string req_line = request_lines[line_no++];
     boost::split(req_line_fields, req_line, [](char c) { return c == ' '; });
     if (req_line_fields[0] == "GET") {
         http_req.set_type(http_request::GET);
     } else if (req_line_fields[0] == "POST") {
         http_req.set_type(http_request::POST);
     }
+    boost::trim(req_line_fields[1]);
+    boost::trim(req_line_fields[2]);
     http_req.set_file_path(req_line_fields[1]);
     http_req.set_version(req_line_fields[2]);
+}
 
-    // Parsing header lines
-    int line_num;
-    for (line_num = 1; line_num < request_lines.size(); line_num++) {
+bool parse_headers(std::vector<std::string> &request_lines, int &line_no, http_request &http_req) {
+    bool found_delim = false;
+    for (line_no; line_no < request_lines.size(); line_no++) {
 
-        if (request_lines[line_num].empty()) {
-            line_num++;
+        if (request_lines[line_no] == "\r") {
+            found_delim = true;
+            line_no++;
             break;
         }
         std::vector<std::string> header_fields;
-        boost::split(header_fields, request_lines[line_num], boost::is_any_of(":"));
+        boost::split(header_fields, request_lines[line_no], boost::is_any_of(":"));
+        boost::trim(header_fields[0]);
+        boost::trim(header_fields[1]);
         http_req.add_header(header_fields[0], header_fields[1]);
     }
+    return found_delim;
+}
 
-    // Parsing body lines
-    std::string body = std::string();
-    for (line_num; line_num < request_lines.size(); line_num++) {
-        body.append(request_lines[line_num]);
-        if (line_num != request_lines.size() - 1)
-            body.append("\n");
+void parse_body(std::vector<std::string> &request_lines, int &line_no, http_request &http_req) {
+    for (line_no; line_no < request_lines.size(); line_no++) {
+        http_req.append_to_body(request_lines[line_no]);
+        if (line_no != request_lines.size() - 1)
+            http_req.append_to_body("\n");
     }
-    http_req.set_data(body);
+}
+
+http_request parser::parse(const int socket) {
+    http_request http_req;
+    std::vector<std::string> request_lines;
+    read_req_from_socket(socket, request_lines, parser::BUFF_SIZE);
+
+    int line_no = 0;
+    parse_req_line(request_lines, line_no, http_req);
+
+    while (!parse_headers(request_lines, line_no, http_req)) {
+        read_req_from_socket(socket, request_lines, parser::BUFF_SIZE);
+        line_no = 0;
+    }
+
+    if (http_req.get_type() == http_request::POST) {
+        parse_body(request_lines, line_no, http_req); // Append rest of buffer to body
+        size_t content_length = static_cast<size_t>(std::stoi(http_req.get_header_value("Content-Length")));
+        if (content_length > http_req.get_body().length()) {
+            read_req_from_socket(socket, request_lines, content_length);
+            line_no = 0;
+            parse_body(request_lines, line_no, http_req);
+        }
+    }
     return http_req;
 }
+
+
 
 http_response get_response_get(http_request req) {
     http_response http_res;
@@ -80,9 +121,9 @@ http_response get_response_post(http_request req) {
     int succ = 0;    
     if (req.get_headers().find("Content-Length")
             == req.get_headers().end())
-        succ = filesys::write(req.get_file_path(), req.get_data());
+        succ = filesys::write(req.get_file_path(), req.get_body());
     else
-        succ = filesys::write(req.get_file_path(), req.get_data(),
+        succ = filesys::write(req.get_file_path(), req.get_body(),
             std::stoi(req.get_headers().find("Content-Length")->second));
 
     if (succ != -1) {
