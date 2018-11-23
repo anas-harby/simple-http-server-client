@@ -10,7 +10,6 @@
 #include "filesys.h"
 
 std::string time_to_string(time_t t);
-std::string get_content_type(std::string file_name);
 
 std::string read_req_from_socket(const int socket, size_t buf_size) {
     char buffer[buf_size + 1] = {0};
@@ -93,6 +92,7 @@ http_request parser::parse(const int socket) {
 http_response get_response_get(http_request req) {
     http_response http_res;
     std::string file_path = req.get_file_path();
+
     if (!filesys::exists(file_path))
         http_res.set_status_code(http_response::status::NOT_FOUND);
     else {
@@ -101,22 +101,24 @@ http_response get_response_get(http_request req) {
         
         http_res.add_header("Last-Modified", time_to_string(filesys::last_modified(file_path)));
         http_res.add_header("Content-Length", std::to_string((int) filesys::filesize(file_path)));
-        http_res.add_header("Content-Type", get_content_type(file_path));
+        http_res.add_header("Content-Type", filesys::get_content_type(file_path));
         http_res.add_header("Connection", "Closed");
     }
     
     time_t now; time(&now);
     http_res.add_header("Date", time_to_string(now));
     http_res.add_header("Server", "Simpleton-Server/1.0.0");
-    
+
+    http_res.set_version(req.get_version());
     return http_res;
 }
 
 http_response get_response_post(http_request req) {
     http_response http_res;
-    int succ = 0;    
-    if (req.get_headers().find("Content-Length")
-            == req.get_headers().end())
+
+    int succ = 0;
+
+    if (req.get_headers().find("Content-Length") == req.get_headers().end())
         succ = filesys::write(req.get_file_path(), req.get_body());
     else
         succ = filesys::write(req.get_file_path(), req.get_body(),
@@ -133,41 +135,24 @@ http_response get_response_post(http_request req) {
     http_res.add_header("Date", time_to_string(now));
     http_res.add_header("Server", "Simpleton-Server/1.0.0");
 
+    http_res.set_version(req.get_version());
     return http_res;
 }
-
 
 http_response parser::get_response(http_request req) {
     if (req.get_type() == http_request::request_type::GET)
         return get_response_get(req);
     else if (req.get_type() == http_request::request_type::POST)
         return get_response_post(req);
-    else
-        perror("Unsupported request type");
+    
+    perror("Unsupported request type");
+    return http_response();
 }
 
-std::string get_content_type(std::string file_name) {
-    std::string extension = file_name.substr(file_name.find_last_of(".") + 1);
-
-    if (extension.compare("html") == 0)
-        return "text/html";
-    else if (extension.compare("htm") == 0)
-        return "text/htm";
-    else if (extension.compare("txt") == 0)
-        return "text/txt";
-    else if (extension.compare("css") == 0)
-        return "text/css";
-    else if (extension.compare("js") == 0)
-        return "text/javascript";
-    else if (extension.compare("jpg") == 0)
-        return "image/jpg";
-    else if (extension.compare("jpeg") == 0)
-        return "image/jpeg";
-    else if (extension.compare("png") == 0)
-        return "image/png";
-    else if (extension.compare("gif") == 0)
-        return "image/gif";
-    return "unknown/unknown";
+http_response parser::get_timeout_response() {
+    http_response http_res;
+    http_res.set_status_code(http_response::status::REQUEST_TIMEOUT);
+    return http_res;
 }
 
 std::string time_to_string(time_t t) {

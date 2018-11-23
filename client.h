@@ -11,10 +11,15 @@
 #include <streambuf>
 #include <istream>
 #include <ostream>
+#include <mutex>
 #include <unistd.h>
+#include <vector>
+#include "util.h"
 
 namespace client {
-    const std::string http_version = "HTTP/1.0";
+    const std::string http_version_1_0 = "HTTP/1.0";
+    const std::string http_version_1_1 = "HTTP/1.1";
+    const std::string user_agent = "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0";;
     const int ok_status = 200;
     const int default_port = 80;
 
@@ -36,7 +41,6 @@ namespace client {
             static const int SIZE = 4096;
             char_type obuf[SIZE];
             char_type ibuf[SIZE];
-
             int sock;
 
         public:
@@ -70,9 +74,9 @@ namespace client {
                     return *buf_type::gptr();
 
                 int num;
-                if ((num = recv(sock, reinterpret_cast<char *>(ibuf), SIZE * char_size, 0)) <= 0)
+                if ((num = recv(sock, reinterpret_cast<char *>(ibuf), SIZE * char_size, 0)) <= 0) {
                     return traits_type::eof();
-
+                }
                 buf_type::setg(ibuf, ibuf, ibuf + num);
                 return *buf_type::gptr();
             }
@@ -88,6 +92,7 @@ namespace client {
             typedef Char char_type;
             typedef std::basic_iostream<char_type> stream_type;
             typedef basic_socketbuf<char_type> buf_type;
+            std::mutex sock_mux;
 
         protected:
             buf_type buf;
@@ -106,6 +111,10 @@ namespace client {
         typedef basic_socketstream<wchar_t> wsocketstream;
 
     }
+
+    void http1_0(const char *argv[]);
+    void http1_1(const char *argv[]);
+    void receive_thread(std::vector<std::string>, net::socketstream&);
 }
 
 #endif //SIMPLE_HTTP_SERVER_CLIENT_CLIENT_H

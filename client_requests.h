@@ -10,12 +10,11 @@
 #include <vector>
 #include "client.h"
 
-typedef void (*pfunc)(const std::vector<std::string> &results, client::net::socketstream &ss);
-
-extern std::map<std::string, pfunc> requestMap;
-
 namespace request {
-    void init();
+    void GET(const std::string file_name, const std::string http_version, const std::string user_agent,
+                const std::string host, bool keep_alive, const std::string type, client::net::socketstream &ss);
+    void POST(const std::string file_name, const std::string http_version, const std::string user_agent,
+            const std::string host, client::net::socketstream &ss);
 }
 
 #endif //SIMPLE_HTTP_SERVER_CLIENT_CLIENT_REQUESTS_H

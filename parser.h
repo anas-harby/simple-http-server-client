@@ -15,6 +15,7 @@ namespace parser {
 
     http_request parse(int socket);
     http_response get_response(http_request req);
+    http_response get_timeout_response();
 };
 
 
