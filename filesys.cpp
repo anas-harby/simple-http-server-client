@@ -45,3 +45,26 @@ int filesys::write(std::string path, const std::string &data, int len) {
     fclose(fp);
     return written;
 }
+
+std::string filesys::get_content_type(std::string file_name) {
+    std::string extension = file_name.substr(file_name.find_last_of(".") + 1);
+    if (extension.compare("html") == 0)
+        return "text/html";
+    else if (extension.compare("htm") == 0)
+        return "text/htm";
+    else if (extension.compare("txt") == 0)
+        return "text/txt";
+    else if (extension.compare("css") == 0)
+        return "text/css";
+    else if (extension.compare("js") == 0)
+        return "text/javascript";
+    else if (extension.compare("jpg") == 0)
+        return "image/jpg";
+    else if (extension.compare("jpeg") == 0)
+        return "image/jpeg";
+    else if (extension.compare("png") == 0)
+        return "image/png";
+    else if (extension.compare("gif") == 0)
+        return "image/gif";
+    return "unknown/unknown";
+}

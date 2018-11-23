@@ -9,7 +9,6 @@
 #include "filesys.h"
 
 std::string time_to_string(time_t t);
-std::string get_content_type(std::string file_name);
 
 http_request parser::parse(std::string req_str) {
     http_request http_req;
@@ -66,7 +65,7 @@ http_response get_response_get(http_request req) {
         
         http_res.add_header("Last-Modified", time_to_string(filesys::last_modified(file_path)));
         http_res.add_header("Content-Length", std::to_string((int) filesys::filesize(file_path)));
-        http_res.add_header("Content-Type", get_content_type(file_path));
+        http_res.add_header("Content-Type", filesys::get_content_type(file_path));
         http_res.add_header("Connection", "Closed");
     }
     
@@ -117,29 +116,6 @@ http_response parser::get_timeout_response() {
     http_response http_res;
     http_res.set_status_code(http_response::status::REQUEST_TIMEOUT);
     return http_res;
-}
-
-std::string get_content_type(std::string file_name) {
-    std::string extension = file_name.substr(file_name.find_last_of(".") + 1);
-    if (extension.compare("html") == 0)
-        return "text/html";
-    else if (extension.compare("htm") == 0)
-        return "text/htm";
-    else if (extension.compare("txt") == 0)
-        return "text/txt";
-    else if (extension.compare("css") == 0)
-        return "text/css";
-    else if (extension.compare("js") == 0)
-        return "text/javascript";
-    else if (extension.compare("jpg") == 0)
-        return "image/jpg";
-    else if (extension.compare("jpeg") == 0)
-        return "image/jpeg";
-    else if (extension.compare("png") == 0)
-        return "image/png";
-    else if (extension.compare("gif") == 0)
-        return "image/gif";
-    return "unknown/unknown";
 }
 
 std::string time_to_string(time_t t) {

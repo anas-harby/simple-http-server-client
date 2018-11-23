@@ -15,6 +15,7 @@ namespace filesys {
     
     std::string read(std::string path);
     int write(std::string path, const std::string &data, int len = -1);
+    std::string get_content_type(std::string file_name);
 };
 
 #endif
