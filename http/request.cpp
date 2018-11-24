@@ -67,5 +67,5 @@ void http_request::append_to_body(const std::string &s) {
 }
 
 bool http_request::header_exists(const std::string &s) {
-    return !(http_request::headers.find("Content-Length") == http_request::headers.end());
+    return !(http_request::headers.find(s) == http_request::headers.end());
 }
