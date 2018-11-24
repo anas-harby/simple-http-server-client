@@ -52,6 +52,8 @@ public:
 
     const std::string &get_header_value(const std::string &key);
 
+    bool header_exists(const std::string &s);
+
 private:
     request_type type;
     std::string file_path, version;

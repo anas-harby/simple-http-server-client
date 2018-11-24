@@ -75,36 +75,42 @@ void server::start() {
 void server::handle_request(int connection_socket) {
     // select(): tries to find if there is a data that can be received
     // within the timeout span currently set.
-    fd_set rfds = build_new_fd_set(connection_socket);
-    struct timeval tv = server::get_tv_from_timeout();
-    int retval = select(connection_socket + 1, &rfds, NULL, NULL, &tv);
+    while (true) {
+        fd_set rfds = build_new_fd_set(connection_socket);
+        struct timeval tv = server::get_tv_from_timeout();
+        int retval = select(connection_socket + 1, &rfds, NULL, NULL, &tv);
 
-    if (!retval) {
-        perror ((std::string("Timeout reached for connection:")
-                + std::to_string(connection_socket)).c_str());
+        if (!retval) {
+            perror ((std::string("Timeout reached for connection: ")
+                     + std::to_string(connection_socket)).c_str());
 
-        http_response res = parser::get_timeout_response();
+            http_response res = parser::get_timeout_response();
+            std::cout << res << std::endl;
+
+            std::stringstream res_ss; res_ss << res;
+            send(connection_socket, res_ss.str().c_str(), res_ss.str().size(), 0);
+            server::finalize_connection(connection_socket);
+            return;
+        }
+
+        // Parse request and print it to console
+        http_request req = parser::parse(connection_socket);
+        std::cout << req << std::endl;
+
+        // Formulate response and print it to console
+        http_response res = parser::get_response(req);
         std::cout << res << std::endl;
 
-        std::stringstream res_ss; res_ss << res;
-        send(connection_socket, res_ss.str().c_str(), res_ss.str().size(), 0);
-        server::finalize_connection(connection_socket);
-        return;
+        // Send response back to client through connection socket
+        std::stringstream res_ss;
+        res_ss << res;
+        send(connection_socket, res_ss.str().c_str(), res_ss.str().length(), 0);
+
+        if (req.header_exists("Connection") && req.get_header_value("Connection") == "keep-alive") {
+            continue;
+        }
+        break;
     }
-
-    // Parse request and print it to console
-    http_request req = parser::parse(connection_socket);
-    std::cout << req << std::endl;
-
-    // Formulate response and print it to console
-    http_response res = parser::get_response(req);
-    std::cout << res << std::endl;
-
-    // Send response back to client through connection socket
-    std::stringstream res_ss;
-    res_ss << res;
-    send(connection_socket, res_ss.str().c_str(), res_ss.str().length(), 0);
-    
     server::finalize_connection(connection_socket);
 }
 
