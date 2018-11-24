@@ -152,6 +152,7 @@ http_response parser::get_response(http_request req) {
 http_response parser::get_timeout_response() {
     http_response http_res;
     http_res.set_status_code(http_response::status::REQUEST_TIMEOUT);
+    http_res.set_version("HTTP/1.1");
     return http_res;
 }
 
