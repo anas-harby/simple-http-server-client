@@ -78,6 +78,7 @@ std::vector<http_request> parser::parse(const int socket, std::string &rest) {
         if (http_req.get_type() == http_request::POST) {
             parse_body(http_req, rest_str, socket);
             requests.push_back(http_req);
+            rest_str = std::string();
             break;
         }
         requests.push_back(http_req);

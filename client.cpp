@@ -187,10 +187,10 @@ void client::http1_1(const char *argv[]) {
                                  filesys::get_content_type(results[1]), ss);
             } else {
                 if (i != requests.size() - 1)
-                    request::POST(results[1], client::http_version_1_1, client::user_agent, results[2], false,
+                    request::POST(results[1], client::http_version_1_1, client::user_agent, results[2], true,
                                   ss);
                 else
-                    request::POST(results[1], client::http_version_1_1, client::user_agent, results[2], true,
+                    request::POST(results[1], client::http_version_1_1, client::user_agent, results[2], false,
                                   ss);
             }
 
