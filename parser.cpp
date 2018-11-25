@@ -51,50 +51,51 @@ void parse_headers(std::string &req_str, http_request &http_req) {
     }
 }
 
-void parse_body(std::vector<std::string> &request_lines, int &line_no, http_request &http_req) {
-    for (line_no; line_no < request_lines.size(); line_no++) {
-        http_req.append_to_body(request_lines[line_no]);
-        if (line_no != request_lines.size() - 1)
-            http_req.append_to_body("\n");
+void parse_body(http_request &http_req, std::string body_str, int socket) {
+    std::string body_chunk_read = body_str;
+    http_req.append_to_body(body_chunk_read);
+    // Check if content-length isn't found in the headers, return error.
+    size_t content_length = static_cast<size_t>(std::stoi(http_req.get_header_value("Content-Length")));
+    while (content_length > http_req.get_body().length()) {
+        std::string body_chunk = read_req_from_socket(socket, parser::CHUNK_SIZE);
+        http_req.append_to_body(body_chunk);
     }
 }
 
-http_request parser::parse(const int socket) {
-    http_request http_req;
+std::vector<http_request> parser::parse(const int socket, std::string &rest) {
+    std::vector<http_request> requests;
 
-    // Reading request line and headers
     std::string request_str = read_req_from_socket(socket, parser::MAX_HEADERS_SIZE);
+    std::string rest_str = rest + request_str;
 
-    size_t delim_pos = request_str.find("\r\n\r\n");
-    if (delim_pos == std::string::npos) {
-        // Should return a response of 413 Entity too large to client
-        std::cerr << "413 Entity too large" << std::endl;
-        exit(1);
-    }
-    std::string headers_str = request_str.substr(0, delim_pos + 1);
-    parse_headers(headers_str, http_req);
+    size_t delim_pos = rest_str.find("\r\n\r\n");
+    while (delim_pos != std::string::npos) {
+        http_request http_req;
 
-    if (http_req.get_type() == http_request::POST) {
-        std::string body_chunk_read = request_str.substr(delim_pos + 4);
-        http_req.append_to_body(body_chunk_read);
-        // Check if content-length isn't found in the headers, return error.
-        size_t content_length = static_cast<size_t>(std::stoi(http_req.get_header_value("Content-Length")));
-        while (content_length > http_req.get_body().length()) {
-            std::string body_chunk = read_req_from_socket(socket, parser::CHUNK_SIZE);
-            http_req.append_to_body(body_chunk);
+        std::string headers_str = rest_str.substr(0, delim_pos + 1);
+        parse_headers(headers_str, http_req);
+        rest_str = rest_str.substr(delim_pos + 4);
+        if (http_req.get_type() == http_request::POST) {
+            parse_body(http_req, rest_str, socket);
+            requests.push_back(http_req);
+            break;
         }
+        requests.push_back(http_req);
+        delim_pos = rest_str.find("\r\n\r\n");
     }
-    return http_req;
+    rest = rest_str;
+    return requests;
 }
-
 
 
 http_response get_response_get(http_request req) {
     http_response http_res;
     std::string file_path = req.get_file_path();
 
-    if (!filesys::exists(file_path))
+    if (!filesys::exists(file_path)) {
         http_res.set_status_code(http_response::status::NOT_FOUND);
+        http_res.add_header("Content-Length", "0");
+    }
     else {
         http_res.set_body(filesys::read(file_path));
         http_res.set_status_code(http_response::status::OK);
@@ -102,7 +103,8 @@ http_response get_response_get(http_request req) {
         http_res.add_header("Last-Modified", time_to_string(filesys::last_modified(file_path)));
         http_res.add_header("Content-Length", std::to_string((int) filesys::filesize(file_path)));
         http_res.add_header("Content-Type", filesys::get_content_type(file_path));
-        http_res.add_header("Connection", "Closed");
+        http_res.add_header("Connection", req.header_exists("Connection")
+                && req.get_header_value("Connection") == "keep-alive" ? "Open" : "Close");
     }
     
     time_t now; time(&now);
@@ -152,6 +154,7 @@ http_response parser::get_response(http_request req) {
 http_response parser::get_timeout_response() {
     http_response http_res;
     http_res.set_status_code(http_response::status::REQUEST_TIMEOUT);
+    http_res.set_version("HTTP/1.1");
     return http_res;
 }
 
