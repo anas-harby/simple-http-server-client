@@ -67,8 +67,9 @@ std::vector<http_request> parser::parse(const int socket) {
 
     std::string request_str = read_req_from_socket(socket, parser::MAX_HEADERS_SIZE);
     std::string rest_str = request_str;
-    
-    while (size_t delim_pos = rest_str.find("\r\n\r\n") != std::string::npos) {
+
+    size_t delim_pos = rest_str.find("\r\n\r\n");
+    while (delim_pos != std::string::npos) {
         http_request http_req;
 
         std::string headers_str = rest_str.substr(0, delim_pos + 1);
@@ -80,6 +81,7 @@ std::vector<http_request> parser::parse(const int socket) {
             break;
         }
         requests.push_back(http_req);
+        delim_pos = rest_str.find("\r\n\r\n");
     }
 
     return requests;
