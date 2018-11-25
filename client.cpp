@@ -196,8 +196,11 @@ void client::http1_1(const char *argv[]) {
 
             rec_sem.notify();
             if (post) {
-                while (get_count--)
+                while (get_count) {
+                    get_count--;
                     post_sem.wait();
+                }
+
                 post_sem.wait();
             }
         }
