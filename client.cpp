@@ -11,7 +11,7 @@
 #include "parser.h"
 #include "filesys.h"
 
-Semaphore sem;
+Semaphore rec_sem, post_sem;
 
 
 template<typename Char>
@@ -121,18 +121,19 @@ void client::http1_0(const char *argv[]) {
         std::vector<std::string> results;
         boost::split(results, s, [](char c) { return c == ' '; });
 
-        if (results.size() == 3)
-            port = std::stoi(results[2]);
+        if (results.size() == 4)
+            port = std::stoi(results[3]);
         else
             port = client::default_port;
         if (ss.open(server_ip, port)) {
 
             std::string type = filesys::get_content_type(std::string(results[1]));
             if (!boost::to_upper_copy<std::string>(results[0]).compare("GET"))
-                request::GET(results[1], client::http_version_1_0, client::user_agent, server_ip, false,
+                request::GET(results[1], client::http_version_1_0, client::user_agent, results[2], false,
                              type, ss);
             else
-                request::POST(results[1], client::http_version_1_0, client::user_agent, server_ip, ss);
+                request::POST(results[1], client::http_version_1_0, client::user_agent, results[2], false,
+                              ss);
 
             (*callbackMap[results[0]])(results, ss);
         } else {
@@ -145,13 +146,14 @@ void client::receive_thread(std::vector<std::string> requests, net::socketstream
     for (int i = 0; i < requests.size(); i++) {
         std::vector<std::string> results;
         boost::split(results, requests[i], [](char c) { return c == ' '; });
-        sem.wait();
+        rec_sem.wait();
         (*callbackMap[results[0]])(results, ss);
+        post_sem.notify();
     }
 }
 
 void client::http1_1(const char *argv[]) {
-    int port = std::stoi(argv[2]);
+    int port = std::stoi(argv[2]), get_count = 0;
     std::string server_ip = argv[1];
     std::ifstream inFile;
     client::net::socketstream ss;
@@ -172,13 +174,32 @@ void client::http1_1(const char *argv[]) {
         for (int i = 0; i < requests.size(); i++) {
             std::vector<std::string> results;
             boost::split(results, requests[i], [](char c) { return c == ' '; });
-            if (i != requests.size() - 1)
-                request::GET(results[1], client::http_version_1_1, client::user_agent, server_ip, true,
-                             filesys::get_content_type(results[1]), ss);
-            else
-                request::GET(results[1], client::http_version_1_1, client::user_agent, server_ip, false,
-                             filesys::get_content_type(results[1]), ss);
-            sem.notify();
+
+            std::string type = filesys::get_content_type(std::string(results[1]));
+            bool post = boost::to_upper_copy<std::string>(results[0]).compare("GET");
+            if (!post) {
+                get_count++;
+                if (i != requests.size() - 1)
+                    request::GET(results[1], client::http_version_1_1, client::user_agent, results[2], true,
+                                 filesys::get_content_type(results[1]), ss);
+                else
+                    request::GET(results[1], client::http_version_1_1, client::user_agent, results[2], false,
+                                 filesys::get_content_type(results[1]), ss);
+            } else {
+                if (i != requests.size() - 1)
+                    request::POST(results[1], client::http_version_1_1, client::user_agent, results[2], false,
+                                  ss);
+                else
+                    request::POST(results[1], client::http_version_1_1, client::user_agent, results[2], true,
+                                  ss);
+            }
+
+            rec_sem.notify();
+            if (post) {
+                while (get_count--)
+                    post_sem.wait();
+                post_sem.wait();
+            }
         }
         receiving.join();
     } else {

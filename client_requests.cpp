@@ -28,7 +28,7 @@ void request::GET(const std::string file_name, const std::string http_version, c
 }
 
 void request::POST(const std::string file_name, const std::string http_version, const std::string user_agent,
-        const std::string host, client::net::socketstream &ss) {
+                   const std::string host, bool keep_alive, client::net::socketstream &ss) {
     std::stringstream iss;
     std::ifstream inFile(file_name);
 
@@ -42,6 +42,10 @@ void request::POST(const std::string file_name, const std::string http_version, 
 
     iss << "POST " << file_name << " " << http_version << "\r\n";
     iss << "Host: " << host << "\r\n";
+    if (keep_alive)
+        iss << "Connection: keep-alive" << "\r\n";
+    else
+        iss << "Connection: close" << "\r\n";
     iss << "Content-Type: application/x-www-form-urlencoded" << "\r\n";
     iss << "Content-Length: " << data.length() << "\r\n";
     iss << "\r\n";
