@@ -92,8 +92,10 @@ http_response get_response_get(http_request req) {
     http_response http_res;
     std::string file_path = req.get_file_path();
 
-    if (!filesys::exists(file_path))
+    if (!filesys::exists(file_path)) {
         http_res.set_status_code(http_response::status::NOT_FOUND);
+        http_res.add_header("Content-Length", "0");
+    }
     else {
         http_res.set_body(filesys::read(file_path));
         http_res.set_status_code(http_response::status::OK);
