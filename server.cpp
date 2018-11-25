@@ -75,8 +75,8 @@ void server::start() {
 void server::handle_request(int connection_socket) {
     // select(): tries to find if there is a data that can be received
     // within the timeout span currently set.
+    fd_set rfds = build_new_fd_set(connection_socket);
     while (true) {
-        fd_set rfds = build_new_fd_set(connection_socket);
         struct timeval tv = server::get_tv_from_timeout();
         int retval = select(connection_socket + 1, &rfds, NULL, NULL, &tv);
 
@@ -94,22 +94,26 @@ void server::handle_request(int connection_socket) {
         }
 
         // Parse request and print it to console
-        http_request req = parser::parse(connection_socket);
-        std::cout << req << std::endl;
+        bool keep_alive = true;
+        std::vector<http_request> requests = parser::parse(connection_socket);
+        for (auto req : requests) {
+            std::cout << req << std::endl;
 
-        // Formulate response and print it to console
-        http_response res = parser::get_response(req);
-        std::cout << res << std::endl;
+            // Formulate response and print it to console
+            http_response res = parser::get_response(req);
+            std::cout << res << std::endl;
 
-        // Send response back to client through connection socket
-        std::stringstream res_ss;
-        res_ss << res;
-        send(connection_socket, res_ss.str().c_str(), res_ss.str().length(), 0);
+            // Send response back to client through connection socket
+            std::stringstream res_ss;
+            res_ss << res;
+            send(connection_socket, res_ss.str().c_str(), res_ss.str().length(), 0);
 
-        if (req.header_exists("Connection") && req.get_header_value("Connection") == "keep-alive") {
-            continue;
+            keep_alive &= req.header_exists("Connection") && req.get_header_value("Connection") == "keep-alive";
+            if (!keep_alive)
+                break;
         }
-        break;
+        if (!keep_alive)
+            break;
     }
     server::finalize_connection(connection_socket);
 }

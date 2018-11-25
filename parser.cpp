@@ -51,42 +51,39 @@ void parse_headers(std::string &req_str, http_request &http_req) {
     }
 }
 
-void parse_body(std::vector<std::string> &request_lines, int &line_no, http_request &http_req) {
-    for (line_no; line_no < request_lines.size(); line_no++) {
-        http_req.append_to_body(request_lines[line_no]);
-        if (line_no != request_lines.size() - 1)
-            http_req.append_to_body("\n");
+void parse_body(http_request &http_req, std::string body_str, int socket) {
+    std::string body_chunk_read = body_str;
+    http_req.append_to_body(body_chunk_read);
+    // Check if content-length isn't found in the headers, return error.
+    size_t content_length = static_cast<size_t>(std::stoi(http_req.get_header_value("Content-Length")));
+    while (content_length > http_req.get_body().length()) {
+        std::string body_chunk = read_req_from_socket(socket, parser::CHUNK_SIZE);
+        http_req.append_to_body(body_chunk);
     }
 }
 
-http_request parser::parse(const int socket) {
-    http_request http_req;
+std::vector<http_request> parser::parse(const int socket) {
+    std::vector<http_request> requests;
 
-    // Reading request line and headers
     std::string request_str = read_req_from_socket(socket, parser::MAX_HEADERS_SIZE);
+    std::string rest_str = request_str;
+    
+    while (size_t delim_pos = rest_str.find("\r\n\r\n") != std::string::npos) {
+        http_request http_req;
 
-    size_t delim_pos = request_str.find("\r\n\r\n");
-    if (delim_pos == std::string::npos) {
-        // Should return a response of 413 Entity too large to client
-        std::cerr << "413 Entity too large" << std::endl;
-        exit(1);
-    }
-    std::string headers_str = request_str.substr(0, delim_pos + 1);
-    parse_headers(headers_str, http_req);
-
-    if (http_req.get_type() == http_request::POST) {
-        std::string body_chunk_read = request_str.substr(delim_pos + 4);
-        http_req.append_to_body(body_chunk_read);
-        // Check if content-length isn't found in the headers, return error.
-        size_t content_length = static_cast<size_t>(std::stoi(http_req.get_header_value("Content-Length")));
-        while (content_length > http_req.get_body().length()) {
-            std::string body_chunk = read_req_from_socket(socket, parser::CHUNK_SIZE);
-            http_req.append_to_body(body_chunk);
+        std::string headers_str = rest_str.substr(0, delim_pos + 1);
+        parse_headers(headers_str, http_req);
+        rest_str = rest_str.substr(delim_pos + 4);
+        if (http_req.get_type() == http_request::POST) {
+            parse_body(http_req, rest_str, socket);
+            requests.push_back(http_req);
+            break;
         }
+        requests.push_back(http_req);
     }
-    return http_req;
-}
 
+    return requests;
+}
 
 
 http_response get_response_get(http_request req) {
