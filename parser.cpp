@@ -129,12 +129,12 @@ http_response get_response_post(http_request req) {
     if (succ != -1) {
         http_res.set_status_code(http_response::status::OK);
         http_res.add_header("Last-Modified", time_to_string(filesys::last_modified(req.get_file_path())));
-        http_res.add_header("Content-Length", std::to_string((int) filesys::filesize(req.get_file_path())));
     } else
         http_res.set_status_code(http_response::status::BAD_REQUEST);
 
     time_t now; time(&now);
     http_res.add_header("Date", time_to_string(now));
+    http_res.add_header("Content-Length", "0");
     http_res.add_header("Server", "Simpleton-Server/1.0.0");
 
     http_res.set_version(req.get_version());
