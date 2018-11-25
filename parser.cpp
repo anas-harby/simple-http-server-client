@@ -101,7 +101,8 @@ http_response get_response_get(http_request req) {
         http_res.add_header("Last-Modified", time_to_string(filesys::last_modified(file_path)));
         http_res.add_header("Content-Length", std::to_string((int) filesys::filesize(file_path)));
         http_res.add_header("Content-Type", filesys::get_content_type(file_path));
-        http_res.add_header("Connection", "Closed");
+        http_res.add_header("Connection", req.header_exists("Connection")
+                && req.get_header_value("Connection") == "keep-alive" ? "Open" : "Close");
     }
     
     time_t now; time(&now);
