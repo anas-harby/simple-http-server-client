@@ -62,11 +62,11 @@ void parse_body(http_request &http_req, std::string body_str, int socket) {
     }
 }
 
-std::vector<http_request> parser::parse(const int socket) {
+std::vector<http_request> parser::parse(const int socket, std::string &rest) {
     std::vector<http_request> requests;
 
     std::string request_str = read_req_from_socket(socket, parser::MAX_HEADERS_SIZE);
-    std::string rest_str = request_str;
+    std::string rest_str = rest + request_str;
 
     size_t delim_pos = rest_str.find("\r\n\r\n");
     while (delim_pos != std::string::npos) {
@@ -83,7 +83,7 @@ std::vector<http_request> parser::parse(const int socket) {
         requests.push_back(http_req);
         delim_pos = rest_str.find("\r\n\r\n");
     }
-
+    rest = rest_str;
     return requests;
 }
 

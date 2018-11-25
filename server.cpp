@@ -76,6 +76,7 @@ void server::handle_request(int connection_socket) {
     // select(): tries to find if there is a data that can be received
     // within the timeout span currently set.
     fd_set rfds = build_new_fd_set(connection_socket);
+    std::string rest = std::string();
     while (true) {
         struct timeval tv = server::get_tv_from_timeout();
         int retval = select(connection_socket + 1, &rfds, NULL, NULL, &tv);
@@ -95,7 +96,7 @@ void server::handle_request(int connection_socket) {
 
         // Parse request and print it to console
         bool keep_alive = true;
-        std::vector<http_request> requests = parser::parse(connection_socket);
+        std::vector<http_request> requests = parser::parse(connection_socket, rest);
         for (auto req : requests) {
             std::cout << req << std::endl;
 

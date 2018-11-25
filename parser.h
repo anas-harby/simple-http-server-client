@@ -11,10 +11,9 @@
 
 namespace parser {
     const int CHUNK_SIZE = 8192;
-    const int MAX_HEADERS_SIZE = 16384;
+    const int MAX_HEADERS_SIZE = 8192;
 
-    http_request parse_single_req(std::string req_str);
-    std::vector<http_request> parse(int socket);
+    std::vector<http_request> parse(int socket, std::string &rest);
     http_response get_response(http_request req);
     http_response get_timeout_response();
 };
